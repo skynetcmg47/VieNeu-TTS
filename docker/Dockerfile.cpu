@@ -3,7 +3,7 @@
 #
 #   docker build -t vieneu-tts:cpu -f docker/Dockerfile.cpu .
 #   docker run -p 7860:7860 -v hf_cache:/home/app/.cache/huggingface vieneu-tts:cpu
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm AS base
 
 ENV PYTHONUNBUFFERED=1 \
     UV_PROJECT_ENVIRONMENT="/opt/venv" \
@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1 \
     GRADIO_SERVER_PORT=7860 \
     GRADIO_SHARE=0
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.10.8 /uv /uvx /bin/
 RUN useradd --create-home --uid 1000 app && mkdir -p /workspace /opt/venv && chown -R app:app /workspace /opt/venv
 WORKDIR /workspace
 
@@ -24,12 +24,25 @@ WORKDIR /workspace
 COPY --chown=app:app pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project --no-build
 
-# Only what the Web UI needs.
 COPY --chown=app:app src/ src/
 COPY --chown=app:app apps/ apps/
+USER app
+
+FROM base AS api
+ENV HOST=0.0.0.0 \
+    PORT=8080 \
+    VIENEU_BACKEND=onnx \
+    VIENEU_DEVICE=cpu \
+    VIENEU_PRECISION=int8 \
+    VIENEU_MAX_STREAMS=1 \
+    VIENEU_QUEUE=1 \
+    VIENEU_WATERMARK=0
+EXPOSE 8080
+CMD ["python", "-m", "apps.openai_speech"]
+
+FROM base AS web
 COPY --chown=app:app config.yaml ./
 COPY --chown=app:app examples/audio_ref/ examples/audio_ref/
 
-USER app
 EXPOSE 7860
 CMD ["python", "apps/gradio_main.py"]

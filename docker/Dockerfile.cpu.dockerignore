@@ -1,0 +1,14 @@
+**
+!pyproject.toml
+!uv.lock
+!src/
+!src/**
+!apps/
+!apps/**
+!config.yaml
+!examples/
+!examples/audio_ref/
+!examples/audio_ref/**
+**/__pycache__/
+**/*.py[cod]
+**/.env*

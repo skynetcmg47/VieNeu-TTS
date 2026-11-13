@@ -60,32 +60,12 @@ Official references, checked October 31, 2026:
 
 ## 2. Build and publish to GHCR
 
-### GitHub Actions (recommended)
+### GitHub Actions
 
-The workflow `.github/workflows/vast-image.yml` builds the existing Dockerfile on
-a native AMD64 Linux runner and publishes to `ghcr.io/<owner>/<repository>-vast`
-(all lowercase). No local Docker daemon, GPU or model weights are required.
-
-1. Push the deployment files and workflow to your GitHub repository. Changes on
-   `main` to `deploy/vast/`, `src/`, `apps/`, `pyproject.toml`, `uv.lock` or the
-   workflow trigger a build. Pull requests do not publish images.
-2. For a manual build, open **Actions > Publish Vast Image > Run workflow** and
-   select the desired branch. The workflow uses the built-in `GITHUB_TOKEN` with
-   `contents: read` and `packages: write`; no GHCR token secret is needed. Ensure
-   repository/organization policies allow Actions to publish packages. If the
-   package already exists, grant this repository Actions write access to it.
-3. Every build publishes `sha-<full-commit-sha>`. Builds from the default branch
-   also publish `latest`; manual builds from other branches do not change it.
-   Actions are SHA-pinned and Docker layers use GitHub Actions cache.
-4. After the first successful push, open the package's settings and make it
-   **Public** for credential-free Vast pulls, or configure private registry
-   credentials in Vast. Publishing does not automatically make a package public.
-5. Record the digest shown in the build summary and use
-   `ghcr.io/<owner>/<repository>-vast@sha256:<digest>` in the Vast template.
-   Treat `latest` as a convenience tag, not a production pin.
-
-The workflow only publishes an image; it does not create or update Vast workers.
-GPU inference, audio quality and live TLS/routing still need Vast acceptance tests.
+Automatic Vast/GPU image publishing has been replaced by the CPU-only ONNX
+workflow `.github/workflows/onnx-image.yml`. Its `-onnx` image serves the direct
+speech API, not the Vast worker. See `deploy/cloudrun/README.md` for Cloud Run.
+The Vast Dockerfile remains available for the manual builds below.
 
 ### Manual build from Apple Silicon (optional)
 
